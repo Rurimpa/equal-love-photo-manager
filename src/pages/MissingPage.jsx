@@ -1,33 +1,33 @@
 import { useState, useEffect } from 'react'
-import { MEMBERS, PHOTO_SETS } from '../data/photoSets'
+import { usePhotoData } from '../hooks/usePhotoData'
 import { getAllOwnership, getSettings } from '../firebase'
 
 export default function MissingPage() {
+  const { members: allMembers, photoSets, dataLoading } = usePhotoData()
   const [ownership, setOwnership] = useState({})
-  const [selectedMembers, setSelectedMembers] = useState(MEMBERS)
+  const [selectedMembers, setSelectedMembers] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (dataLoading) return
     async function load() {
-      const [owned, settings] = await Promise.all([
-        getAllOwnership(),
-        getSettings()
-      ])
+      const [owned, settings] = await Promise.all([getAllOwnership(), getSettings()])
       setOwnership(owned)
-      if (settings && settings.length > 0) setSelectedMembers(settings)
+      setSelectedMembers(settings && settings.length > 0 ? settings : allMembers)
       setLoading(false)
     }
     load()
-  }, [])
+  }, [dataLoading, allMembers])
 
-  const missingBySet = PHOTO_SETS.map(set => ({
+  const members = selectedMembers || allMembers
+  const missingBySet = photoSets.map(set => ({
     ...set,
-    missing: selectedMembers.filter(m => !ownership[`${set.id}_${m}`])
+    missing: members.filter(m => !ownership[`${set.id}_${m}`])
   })).filter(set => set.missing.length > 0)
 
   const totalMissing = missingBySet.reduce((acc, s) => acc + s.missing.length, 0)
 
-  if (loading) return (
+  if (loading || dataLoading) return (
     <div className="flex items-center justify-center h-screen">
       <div className="text-pink-400 text-lg">読み込み中...</div>
     </div>
@@ -53,14 +53,10 @@ export default function MissingPage() {
           <div key={set.id} className="bg-white rounded-2xl shadow-sm mb-3 overflow-hidden border border-pink-100">
             <div className="bg-pink-50 px-4 py-2">
               <p className="font-bold text-pink-800 text-sm">{set.name}</p>
-              <p className="text-xs text-pink-400">{set.date}</p>
             </div>
             <div className="p-3 flex flex-wrap gap-2">
               {set.missing.map(member => (
-                <span
-                  key={member}
-                  className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500"
-                >
+                <span key={member} className="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">
                   {member}
                 </span>
               ))}

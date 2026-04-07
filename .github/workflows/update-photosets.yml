@@ -2,7 +2,6 @@ name: Auto Update Photo Sets
 
 on:
   schedule:
-    # Every Monday 09:00 JST (UTC 00:00)
     - cron: '0 0 * * 1'
   workflow_dispatch:
 
@@ -32,14 +31,14 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          git diff --quiet src/data/photoSets.js || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --quiet public/photoSets.json || echo "changed=true" >> $GITHUB_OUTPUT
 
       - name: Commit and deploy if changed
         if: steps.changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/data/photoSets.js
+          git add public/photoSets.json
           git commit -m "auto: update photo sets from shop"
           git push
           npm run deploy

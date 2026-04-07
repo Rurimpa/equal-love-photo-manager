@@ -13,7 +13,6 @@ for (let page = 1; page <= TOTAL_PAGES; page++) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     const html = await res.text();
-    // <h3>生写真セット...</h3> を抽出
     const re = /<h3[^>]*>(生写真セット[^<]+|[^<]*生写真セット[^<]+)<\/h3>/g;
     let m, found = 0;
     while ((m = re.exec(html)) !== null) {
@@ -32,29 +31,22 @@ for (let page = 1; page <= TOTAL_PAGES; page++) {
 
 console.log(`\n合計 ${sets.length} 件\n`);
 
-const lines = sets.map((s, i) =>
-  `  { id: "set${String(i+1).padStart(3,'0')}", name: "${s.name}", date: "" },`
-).join('\n');
+const photoSets = sets.map((s, i) => ({
+  id: `set${String(i + 1).padStart(3, '0')}`,
+  name: s.name
+}));
 
-const out = `export const MEMBERS = [
-  "大谷映美里",
-  "大場花菜",
-  "音嶋莉沙",
-  "齋藤樹愛羅",
-  "佐々木舞香",
-  "髙松瞳",
-  "瀧脇笙古",
-  "野口衣織",
-  "諸橋沙夏",
-  "山本杏奈"
-]
+const members = [
+  "大谷映美里", "大場花菜", "音嶋莉沙", "齋藤樹愛羅", "佐々木舞香",
+  "髙松瞳", "瀧脇笙古", "野口衣織", "諸橋沙夏", "山本杏奈"
+];
 
-export const PHOTO_SETS = [
-${lines}
-]
-`;
+const data = {
+  members,
+  photoSets,
+  updatedAt: new Date().toISOString().split('T')[0]
+};
 
-const outPath = join(__dirname, 'src', 'data', 'photoSets.js');
-writeFileSync(outPath, out, 'utf8');
-console.log(`photoSets.js を更新しました: ${outPath}`);
-sets.forEach((s, i) => console.log(`  ${String(i+1).padStart(3)}. ${s.name}`));
+const outPath = join(__dirname, 'public', 'photoSets.json');
+writeFileSync(outPath, JSON.stringify(data, null, 2), 'utf8');
+console.log(`public/photoSets.json を更新しました (${photoSets.length}件)`);
